@@ -9,27 +9,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - uses: actions/checkout@v3
+        with:
+          lfs: true  # ✅ Checkout cả Git LFS
 
-      # 2. Config Git
+      - name: Install Git LFS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-lfs
+          git lfs install
+
       - name: Set up Git
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      # 3. Push code to Hugging Face Space (Docker)
       - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Clone Space with token auth
           git clone https://oauth2:${HF_TOKEN}@huggingface.co/spaces/F4t/X-ray-Bone-Fracture-Detector hf_space
-          
-          # Sync repo (exclude .git)
           rsync -av --exclude '.git' ./ hf_space/
-          
           cd hf_space
+          git lfs track "*.pt"    # ✅ Đảm bảo track file .pt
+          git add .gitattributes
           git add .
           git commit -m "Auto-deploy from GitHub Actions" || echo "No changes to commit"
           git push
