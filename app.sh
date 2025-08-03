@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-# Ensure writable Streamlit dir
-mkdir -p /app/.streamlit
+# 1. Set các thư mục writable
 export STREAMLIT_HOME=/app/.streamlit
+export MPLCONFIGDIR=/app/.config/matplotlib
+export YOLO_CONFIG_DIR=/app/.config/ultralytics
 
-# Start FastAPI (internal)
-uvicorn api.main:app --host 0.0.0.0 --port 7861 &
+mkdir -p $STREAMLIT_HOME $MPLCONFIGDIR $YOLO_CONFIG_DIR
 
-# Start Streamlit (public)
-streamlit run scripts/ui.py --server.port 7860 --server.address 0.0.0.0
+# 2. Chạy Streamlit trên 7860 (Hugging Face Space chỉ expose cổng này)
+exec streamlit run scripts/ui.py --server.port 7860 --server.address 0.0.0.0
