@@ -1,7 +1,6 @@
-fastapi
-uvicorn
+torch==2.5.1
+torchvision==0.20.1
+ultralytics
 streamlit
-ultralytics==8.2.0
-pillow
 opencv-python-headless
-huggingface_hub
+pillow

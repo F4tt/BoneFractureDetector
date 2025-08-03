@@ -6,7 +6,8 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install system & Python dependencies
-RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 \
+RUN apt-get update && apt-get install -y \
+    libgl1 libglib2.0-0 git \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
@@ -14,10 +15,11 @@ RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 \
 # Copy toàn bộ code
 COPY . .
 
-# Fix quyền ghi cho Streamlit và Matplotlib
+# Fix quyền ghi cho Streamlit, Matplotlib và YOLO
 ENV STREAMLIT_HOME=/app/.streamlit
 ENV MPLCONFIGDIR=/app/.matplotlib
-RUN mkdir -p $STREAMLIT_HOME $MPLCONFIGDIR
+ENV YOLO_CONFIG_DIR=/app/.ultralytics
+RUN mkdir -p $STREAMLIT_HOME $MPLCONFIGDIR $YOLO_CONFIG_DIR
 
 # Expose port 7860 cho Hugging Face
 EXPOSE 7860
