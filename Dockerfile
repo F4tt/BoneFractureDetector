@@ -17,6 +17,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Make entrypoint executable
 RUN chmod +x app.sh
 
+
+# Set Streamlit config directory
+ENV STREAMLIT_HOME=/app/.streamlit
+RUN mkdir -p /app/.streamlit
+
 # Hugging Face Spaces expects Docker to run on port 7860
 EXPOSE 7860
 
