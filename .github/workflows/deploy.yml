@@ -1,0 +1,34 @@
+name: Deploy to Hugging Face
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Bước 1: Checkout code
+      - uses: actions/checkout@v3
+
+      # Bước 2: Cấu hình Git
+      - name: Set up Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      # Bước 3: Push code lên Hugging Face Space
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Clone Space repo (replace with your Space URL)
+          git clone https://huggingface.co/spaces/F4t/X-ray-Bone-Fracture-Detector hf_space
+          rsync -av --exclude '.git' ./ hf_space/
+          cd hf_space
+          git add .
+          git commit -m "Auto-deploy from GitHub Actions" || echo "No changes to commit"
+          git push
+
+

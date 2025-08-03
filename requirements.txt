@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pillow
+ultralytics==8.2.0
+streamlit
+requests
