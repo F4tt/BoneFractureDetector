@@ -1,0 +1,45 @@
+name: Auto Retrain YOLO
+
+on:
+  schedule:
+    # Chạy vào 1 giờ sáng mỗi Chủ nhật
+    - cron: "0 1 * * 0"
+  workflow_dispatch:  # Cho phép chạy thủ công
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 tiếng, đủ train CPU
+
+    steps:
+      # 1. Checkout repo
+      - uses: actions/checkout@v3
+
+      # 2. Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ultralytics huggingface_hub pillow opencv-python-headless
+
+      # 4. Retrain model
+      - name: Auto retrain YOLO
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/auto_retrain.py
+
+      # 5. Commit new best.pt if improved
+      - name: Commit and Push if best.pt updated
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          
+          git add api/best.pt
+          git commit -m "Auto-update best.pt after retrain" || echo "No changes"
+          git push origin main
