@@ -1,6 +1,7 @@
 fastapi
 uvicorn
-pillow
-ultralytics==8.2.0
 streamlit
-requests
+ultralytics==8.2.0
+pillow
+opencv-python-headless
+huggingface_hub

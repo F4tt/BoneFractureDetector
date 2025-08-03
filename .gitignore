@@ -1,23 +1,23 @@
-# Ignore dataset images
+# Dataset
 Data/
-!Data/xray.v1-v1.yolov11/data.yaml  # Chỉ giữ file cấu hình
+!Data/xray.v1.yolov11/data.yaml
 
-# Ignore checkpoints (chỉ giữ best.pt để deploy)
+# Checkpoints
 checkpoints/
 !api/best.pt
 
-# Ignore outputs and cache
+# Outputs & Cache
 outputs/
 __pycache__/
 *.log
 *.tmp
 
-# Ignore large media
+# Images
 *.jpg
 *.jpeg
 *.png
 *.mp4
 
-# Virtual environments
+# Virtual env
 venv/
 .env/
