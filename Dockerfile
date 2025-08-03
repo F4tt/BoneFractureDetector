@@ -15,10 +15,12 @@ RUN apt-get update && apt-get install -y \
 # Copy toàn bộ code
 COPY . .
 
-# Fix quyền ghi cho Streamlit, Matplotlib và YOLO
-ENV STREAMLIT_HOME=/app/.streamlit
-ENV MPLCONFIGDIR=/app/.matplotlib
-ENV YOLO_CONFIG_DIR=/app/.ultralytics
+# Sử dụng /tmp cho toàn bộ cache để tránh permission error
+ENV STREAMLIT_HOME=/tmp/.streamlit
+ENV MPLCONFIGDIR=/tmp/.matplotlib
+ENV YOLO_CONFIG_DIR=/tmp/.ultralytics
+
+# Tạo thư mục cache
 RUN mkdir -p $STREAMLIT_HOME $MPLCONFIGDIR $YOLO_CONFIG_DIR
 
 # Expose port 7860 cho Hugging Face
