@@ -12,18 +12,19 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     libgomp1 \
     libgtk-3-0 \
+    libgl1 \
     fontconfig \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================
-# 2. Create writable cache dirs
+# 2. Writable cache directories
 # ============================
 ENV MPLCONFIGDIR=/app/.cache/matplotlib
 ENV YOLO_CONFIG_DIR=/app/.cache/ultralytics
-ENV FONTCONFIG_PATH=/etc/fonts
-RUN mkdir -p /app/.cache/matplotlib && \
-    mkdir -p /app/.cache/ultralytics && \
-    chmod -R 777 /app/.cache
+RUN mkdir -p /app/.cache/matplotlib \
+    /app/.cache/ultralytics \
+    && chmod -R 777 /app/.cache
 
 # ============================
 # 3. Install Python deps
@@ -36,7 +37,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ============================
 COPY . .
 
+# ============================
+# 5. Expose port & healthcheck
+# ============================
 EXPOSE 7860
-HEALTHCHECK CMD curl --fail http://localhost:7860/_stcore/health
+HEALTHCHECK CMD curl --fail http://localhost:7860/_stcore/health || exit 1
 
+# ============================
+# 6. Run Streamlit app
+# ============================
 CMD ["streamlit", "run", "app.py", "--server.port=7860", "--server.address=0.0.0.0"]
