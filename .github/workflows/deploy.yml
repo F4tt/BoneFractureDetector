@@ -5,33 +5,50 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  repository_dispatch:
+    types: [model-updated]  # Tự động deploy khi retrain.yml báo model mới
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     
     steps:
+    # ---------------------
+    # 1. Checkout repo
+    # ---------------------
     - uses: actions/checkout@v3
       with:
         lfs: true
-    
+
+    # ---------------------
+    # 2. Setup Python
+    # ---------------------
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     
+    # ---------------------
+    # 3. Install dependencies
+    # ---------------------
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
+    # ---------------------
+    # 4. Basic check
+    # ---------------------
     - name: Test app locally
       run: |
-        # Basic syntax check
         python -c "import app; print('App imports successfully')"
+        python -c "from utils.detection import BoneFractureDetector; print('Detection module OK')"
     
+    # ---------------------
+    # 5. Deploy to Hugging Face
+    # ---------------------
     - name: Deploy to Hugging Face Spaces
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main' || github.event_name == 'repository_dispatch'
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
         HF_USERNAME: ${{ secrets.HF_USERNAME }}
@@ -39,16 +56,20 @@ jobs:
       run: |
         # Clone HF Space
         git clone https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME hf_space
-        
-        # Copy files to HF Space
-        cp -r . hf_space/
+
+        # Copy all files except .git, data, runs, and hf_space itself
+        rsync -av --exclude='.git/' --exclude='data/' --exclude='runs/' --exclude='hf_space/' ./ hf_space/
+
         cd hf_space
-        
-        # Configure git
         git config user.email "action@github.com"
         git config user.name "GitHub Action"
-        
-        # Commit and push
+
+        if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+          COMMIT_MSG="🚀 Auto-deploy: Updated model from retrain pipeline"
+        else
+          COMMIT_MSG="🚀 Deploy from GitHub Actions"
+        fi
+
         git add .
-        git commit -m "Auto-deploy from GitHub Actions" || exit 0
+        git commit -m "$COMMIT_MSG" || echo "No changes to commit"
         git push
