@@ -2,9 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# ============================
 # 1. System dependencies
-# ============================
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libsm6 \
@@ -17,35 +15,26 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# ============================
-# 2. Writable cache directories
-# ============================
-ENV MPLCONFIGDIR=/app/.cache/matplotlib
-ENV YOLO_CONFIG_DIR=/app/.cache/ultralytics
-ENV STREAMLIT_CONFIG_DIR=/app/.streamlit
-RUN mkdir -p /app/.cache/matplotlib \
-    /app/.cache/ultralytics \
-    /app/.streamlit \
-    && chmod -R 777 /app/.cache /app/.streamlit
+# 2. Create a non-root user
+RUN useradd -m appuser
+USER appuser
 
-# ============================
-# 3. Install Python deps
-# ============================
-COPY requirements.txt .
+# 3. Set working directories for cache
+ENV HOME=/home/appuser
+ENV MPLCONFIGDIR=$HOME/.cache/matplotlib
+ENV YOLO_CONFIG_DIR=$HOME/.cache/ultralytics
+ENV STREAMLIT_CONFIG_DIR=$HOME/.streamlit
+
+RUN mkdir -p $MPLCONFIGDIR $YOLO_CONFIG_DIR $STREAMLIT_CONFIG_DIR
+
+# 4. Copy and install requirements
+COPY --chown=appuser:appuser requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ============================
-# 4. Copy app code
-# ============================
-COPY . .
+# 5. Copy app code
+COPY --chown=appuser:appuser . .
 
-# ============================
-# 5. Expose port & healthcheck
-# ============================
 EXPOSE 7860
-HEALTHCHECK CMD curl --fail http://localhost:7860/_stcore/health || exit 1
 
-# ============================
-# 6. Run Streamlit app
-# ============================
+# 6. Run Streamlit (user is non-root)
 CMD ["streamlit", "run", "app.py", "--server.port=7860", "--server.address=0.0.0.0"]
