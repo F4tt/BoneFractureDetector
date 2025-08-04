@@ -65,9 +65,9 @@ jobs:
         git config user.name "GitHub Action"
 
         if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-          COMMIT_MSG="🚀 Auto-deploy: Updated model from retrain pipeline"
+          COMMIT_MSG="Auto-deploy: Updated model from retrain pipeline"
         else
-          COMMIT_MSG="🚀 Deploy from GitHub Actions"
+          COMMIT_MSG="Deploy from GitHub Actions"
         fi
 
         git add .
