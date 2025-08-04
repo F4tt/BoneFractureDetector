@@ -21,9 +21,7 @@ __pycache__/
 # =====================
 # Data & Datasets
 # =====================
-data/*
-!data/data.yaml        # Giữ file cấu hình YOLO dataset
-!data/last_commit.txt  # Giữ commit hash để check update
+checkpoints
 
 # =====================
 # YOLO Training Logs
@@ -35,8 +33,7 @@ models/training_logs/*
 # =====================
 # YOLO Models
 # =====================
-models/*.pt
-!models/best.pt        # Giữ best model để deploy
+data_unpush
 
 # =====================
 # Cache & Temporary
