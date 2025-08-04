@@ -145,19 +145,19 @@ jobs:
         COMMIT_MSG="🤖 Auto-retrain: Updated best model"
         if [ -f "models/training_logs/metrics_history.json" ]; then
           METRICS=$(python <<EOF
-import json
-with open('models/training_logs/metrics_history.json', 'r') as f:
-    data = json.load(f)
-    bm = data.get('best_metrics', {})
-    if bm:
-        print(f"mAP50: {bm.get('mAP50',0):.4f}, Precision: {bm.get('precision',0):.4f}, Recall: {bm.get('recall',0):.4f}")
-EOF
-)
-          COMMIT_MSG="$COMMIT_MSG - $METRICS"
-        fi
+          import json
+          with open('models/training_logs/metrics_history.json', 'r') as f:
+              data = json.load(f)
+              bm = data.get('best_metrics', {})
+              if bm:
+                  print(f"mAP50: {bm.get('mAP50',0):.4f}, Precision: {bm.get('precision',0):.4f}, Recall: {bm.get('recall',0):.4f}")
+          EOF
+          )
+                    COMMIT_MSG="$COMMIT_MSG - $METRICS"
+                  fi
 
-        git commit -m "$COMMIT_MSG" || echo "No changes to commit"
-        git push
+                  git commit -m "$COMMIT_MSG" || echo "No changes to commit"
+                  git push
 
     # ---------------------
     # 11. Trigger deploy
