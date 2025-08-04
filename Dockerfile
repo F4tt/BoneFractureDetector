@@ -1,30 +1,30 @@
-FROM python:3.10-slim
+FROM python:3.9-slim
 
 WORKDIR /app
 
-# Copy requirements trước để tận dụng cache
-COPY requirements.txt .
-
-# Install system & Python dependencies
+# System dependencies
 RUN apt-get update && apt-get install -y \
-    libgl1 libglib2.0-0 git \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy toàn bộ code
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
 COPY . .
 
-# Sử dụng /tmp cho toàn bộ cache để tránh permission error
-ENV STREAMLIT_HOME=/tmp/.streamlit
-ENV MPLCONFIGDIR=/tmp/.matplotlib
-ENV YOLO_CONFIG_DIR=/tmp/.ultralytics
-
-# Tạo thư mục cache
-RUN mkdir -p $STREAMLIT_HOME $MPLCONFIGDIR $YOLO_CONFIG_DIR
-
-# Expose port 7860 cho Hugging Face
+# Expose port
 EXPOSE 7860
 
-# Chạy Streamlit trực tiếp
-CMD ["streamlit", "run", "scripts/ui.py", "--server.port=7860", "--server.address=0.0.0.0"]
+# Health check
+HEALTHCHECK CMD curl --fail http://localhost:7860/_stcore/health
+
+# Command to run the application
+CMD ["streamlit", "run", "app.py", "--server.port=7860", "--server.address=0.0.0.0"]

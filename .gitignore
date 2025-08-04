@@ -1,23 +1,46 @@
-# Dataset
-Data/
-!Data/xray.v1.yolov11/data.yaml
-
-# Checkpoints
-checkpoints/
-!api/best.pt
-
-# Outputs & Cache
-outputs/
+# =====================
+# Python & general
+# =====================
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.env
+.venv
 *.log
-*.tmp
 
-# Images
-*.jpg
-*.jpeg
-*.png
-*.mp4
+# =====================
+# VSCode & IDE
+# =====================
+.vscode/
+.idea/
+*.swp
 
-# Virtual env
-venv/
-.env/
+# =====================
+# Data & Datasets
+# =====================
+data/*
+!data/data.yaml        # Giữ file cấu hình YOLO dataset
+!data/last_commit.txt  # Giữ commit hash để check update
+
+# =====================
+# YOLO Training Logs
+# =====================
+runs/
+models/training_logs/*
+!models/training_logs/metrics_history.json  # Giữ lịch sử metrics
+
+# =====================
+# YOLO Models
+# =====================
+models/*.pt
+!models/best.pt        # Giữ best model để deploy
+
+# =====================
+# Cache & Temporary
+# =====================
+wandb/
+.cache/
+tmp/
