@@ -6,12 +6,12 @@ on:
   pull_request:
     branches: [ main ]
   repository_dispatch:
-    types: [model-updated]  # Tự động deploy khi retrain.yml báo model mới
+    types: [model-updated]  # Auto-deploy khi retrain xong
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     # ---------------------
     # 1. Checkout repo
@@ -27,7 +27,7 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-    
+
     # ---------------------
     # 3. Install dependencies
     # ---------------------
@@ -35,7 +35,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
+
     # ---------------------
     # 4. Basic check
     # ---------------------
@@ -43,7 +43,7 @@ jobs:
       run: |
         python -c "import app; print('App imports successfully')"
         python -c "from utils.detection import BoneFractureDetector; print('Detection module OK')"
-    
+
     # ---------------------
     # 5. Deploy to Hugging Face
     # ---------------------
@@ -54,20 +54,25 @@ jobs:
         HF_USERNAME: ${{ secrets.HF_USERNAME }}
         HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
       run: |
-        # Clone HF Space
         git clone https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME hf_space
 
-        # Copy all files except .git, data, runs, and hf_space itself
-        rsync -av --exclude='.git/' --exclude='data/' --exclude='runs/' --exclude='hf_space/' ./ hf_space/
+        # Copy all project files except cache and runs
+        rsync -av \
+          --exclude='.git/' \
+          --exclude='runs/' \
+          --exclude='wandb/' \
+          --exclude='hf_space/' \
+          --exclude='__pycache__/' \
+          ./ hf_space/
 
         cd hf_space
         git config user.email "action@github.com"
         git config user.name "GitHub Action"
 
         if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-          COMMIT_MSG="Auto-deploy: Updated model from retrain pipeline"
+          COMMIT_MSG="🚀 Auto-deploy: Updated model from retrain pipeline"
         else
-          COMMIT_MSG="Deploy from GitHub Actions"
+          COMMIT_MSG="🚀 Deploy from GitHub Actions"
         fi
 
         git add .
