@@ -2,8 +2,7 @@ name: Auto Retrain YOLO Model
 
 on:
   schedule:
-    # Chạy mỗi ngày lúc 2:00 AM UTC
-    - cron: '0 2 * * *'
+    - cron: '0 2 * * *'  # Chạy mỗi ngày lúc 2:00 AM UTC
   workflow_dispatch:
     inputs:
       force_retrain:
@@ -12,8 +11,8 @@ on:
         default: 'false'
         type: choice
         options:
-        - 'true'
-        - 'false'
+          - 'true'
+          - 'false'
 
 jobs:
   check-and-retrain:
@@ -21,164 +20,141 @@ jobs:
     timeout-minutes: 480
 
     steps:
-    # ---------------------
-    # 1. Checkout repo
-    # ---------------------
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        lfs: true
-        token: ${{ secrets.GITHUB_TOKEN }}
+      # 1. Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    # ---------------------
-    # 2. Setup Python
-    # ---------------------
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
+      # 2. Setup Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-    # ---------------------
-    # 3. Cache pip
-    # ---------------------
-    - name: Cache pip dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      # 3. Cache pip
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    # ---------------------
-    # 4. Install deps
-    # ---------------------
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    # ---------------------
-    # 5. Setup Weights & Biases
-    # ---------------------
-    - name: Setup Weights & Biases (Optional)
-      env:
-        WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-      run: |
-        if [ ! -z "$WANDB_API_KEY" ]; then
-          echo "Setting up W&B for experiment tracking..."
-          pip install wandb
-          wandb login $WANDB_API_KEY
-        else
-          echo "W&B not configured, skipping..."
-        fi
+      # 5. Setup Weights & Biases
+      - name: Setup Weights & Biases (Optional)
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: |
+          if [ ! -z "$WANDB_API_KEY" ]; then
+            echo "Setting up W&B for experiment tracking..."
+            pip install wandb
+            wandb login $WANDB_API_KEY
+          else
+            echo "W&B not configured, skipping..."
+          fi
 
-    # ---------------------
-    # 6. Create directories
-    # ---------------------
-    - name: Create necessary directories
-      run: |
-        mkdir -p models/training_logs
-        mkdir -p data
-        mkdir -p runs/detect
+      # 6. Create directories
+      - name: Create necessary directories
+        run: |
+          mkdir -p models/training_logs
+          mkdir -p data
+          mkdir -p runs/detect
 
-    # ---------------------
-    # 7. Download base model
-    # ---------------------
-    - name: Download base YOLO11 model if not exists
-      run: |
-        if [ ! -f "models/yolo11.pt" ]; then
-          echo "Downloading YOLO11 base model..."
-          python <<EOF
-          import os
-          from ultralytics import YOLO
+      # 7. Download base YOLO model
+      - name: Download base YOLO11 model if not exists
+        run: |
+          if [ ! -f "models/yolo11.pt" ]; then
+            echo "Downloading YOLO11 base model..."
+            python <<EOF
+            import os
+            from ultralytics import YOLO
 
-          os.makedirs('models', exist_ok=True)
-          model = YOLO('yolo11l.pt')
-          model.save('models/yolo11.pt')
-          print('Base model downloaded successfully!')
-          EOF
-                  fi
+            os.makedirs('models', exist_ok=True)
+            model = YOLO('yolo11l.pt')
+            model.save('models/yolo11.pt')
+            print('Base model downloaded successfully!')
+            EOF
+                      fi
 
-    # ---------------------
-    # 8. Run retrain pipeline
-    # ---------------------
-    - name: Run retrain pipeline
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        HF_DATASET_NAME: ${{ secrets.HF_DATASET_NAME }}
-        WANDB_PROJECT: ${{ secrets.WANDB_PROJECT }}
-        FORCE_RETRAIN: ${{ github.event.inputs.force_retrain }}
-      run: |
-        echo "Starting retrain pipeline..."
-        python -m utils.retrain.trainer
 
-    # ---------------------
-    # 9. Check if model updated
-    # ---------------------
-    - name: Check if model was updated
-      id: check-update
-      run: |
-        if [ -f "models/best.pt" ]; then
-          if find models/best.pt -newermt '1 hour ago' | grep -q .; then
-            echo "MODEL_UPDATED=true" >> $GITHUB_OUTPUT
-            echo "Model was updated!"
+      # 8. Run retrain pipeline
+      - name: Run retrain pipeline
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_DATASET_NAME: ${{ secrets.HF_DATASET_NAME }}
+          WANDB_PROJECT: ${{ secrets.WANDB_PROJECT }}
+          FORCE_RETRAIN: ${{ github.event.inputs.force_retrain }}
+        run: |
+          echo "Starting retrain pipeline..."
+          python -m utils.retrain.trainer
+
+      # 9. Check if model updated
+      - name: Check if model was updated
+        id: check-update
+        run: |
+          if [ -f "models/best.pt" ]; then
+            if find models/best.pt -newermt '1 hour ago' | grep -q .; then
+              echo "MODEL_UPDATED=true" >> $GITHUB_OUTPUT
+              echo "Model was updated!"
+            else
+              echo "MODEL_UPDATED=false" >> $GITHUB_OUTPUT
+              echo "Model was not updated."
+            fi
           else
             echo "MODEL_UPDATED=false" >> $GITHUB_OUTPUT
-            echo "Model was not updated."
-          fi
-        else
-          echo "MODEL_UPDATED=false" >> $GITHUB_OUTPUT
-          echo "No best.pt found."
+            echo "No best.pt found."
 
-    # ---------------------
-    # 10. Commit updated model
-    # ---------------------
-    - name: Commit updated model
-      if: steps.check-update.outputs.MODEL_UPDATED == 'true'
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+      # 10. Commit updated model
+      - name: Commit updated model
+        if: steps.check-update.outputs.MODEL_UPDATED == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
-        git add models/best.pt models/training_logs/
-        git add data/last_commit.txt
+          git add models/best.pt models/training_logs/
+          git add data/last_commit.txt
 
-        COMMIT_MSG="🤖 Auto-retrain: Updated best model"
-        if [ -f "models/training_logs/metrics_history.json" ]; then
-          METRICS=$(python <<EOF
-          import json
-          with open('models/training_logs/metrics_history.json', 'r') as f:
-              data = json.load(f)
-              bm = data.get('best_metrics', {})
-              if bm:
-                  print(f"mAP50: {bm.get('mAP50',0):.4f}, Precision: {bm.get('precision',0):.4f}, Recall: {bm.get('recall',0):.4f}")
-          EOF
-          )
-                    COMMIT_MSG="$COMMIT_MSG - $METRICS"
-                  fi
+          COMMIT_MSG="Auto-retrain: Updated best model"
+          if [ -f "models/training_logs/metrics_history.json" ]; then
+            METRICS=$(python <<EOF
+            import json
+            with open('models/training_logs/metrics_history.json', 'r') as f:
+                data = json.load(f)
+                bm = data.get('best_metrics', {})
+                if bm:
+                    print(f"mAP50: {bm.get('mAP50',0):.4f}, Precision: {bm.get('precision',0):.4f}, Recall: {bm.get('recall',0):.4f}")
+            EOF
+            )
+                        COMMIT_MSG="$COMMIT_MSG - $METRICS"
+                      fi
 
-                  git commit -m "$COMMIT_MSG" || echo "No changes to commit"
-                  git push
+                      git commit -m "$COMMIT_MSG" || echo "No changes to commit"
+                      git push
 
-    # ---------------------
-    # 11. Trigger deploy
-    # ---------------------
-    - name: Trigger deployment if model updated
-      if: steps.check-update.outputs.MODEL_UPDATED == 'true'
-      uses: peter-evans/repository-dispatch@v2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        event-type: model-updated
-        client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+      # 11. Trigger deploy
+      - name: Trigger deployment if model updated
+        if: steps.check-update.outputs.MODEL_UPDATED == 'true'
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: model-updated
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
 
-    # ---------------------
-    # 12. Upload artifacts
-    # ---------------------
-    - name: Upload training artifacts
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: training-results
-        path: |
-          runs/detect
-          models/training_logs/
-        retention-days: 30
+      # 12. Upload artifacts
+      - name: Upload training artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: training-results
+          path: |
+            runs/detect
+            models/training_logs/
+          retention-days: 30
