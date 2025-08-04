@@ -22,9 +22,11 @@ RUN apt-get update && apt-get install -y \
 # ============================
 ENV MPLCONFIGDIR=/app/.cache/matplotlib
 ENV YOLO_CONFIG_DIR=/app/.cache/ultralytics
+ENV STREAMLIT_CONFIG_DIR=/app/.streamlit
 RUN mkdir -p /app/.cache/matplotlib \
     /app/.cache/ultralytics \
-    && chmod -R 777 /app/.cache
+    /app/.streamlit \
+    && chmod -R 777 /app/.cache /app/.streamlit
 
 # ============================
 # 3. Install Python deps
