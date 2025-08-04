@@ -18,23 +18,24 @@ RUN apt-get update && apt-get install -y \
 # 2. Create a non-root user
 RUN useradd -m appuser
 USER appuser
-
-# 3. Set working directories for cache
 ENV HOME=/home/appuser
+
+# 3. Add local bin to PATH (important for Streamlit)
+ENV PATH=$HOME/.local/bin:$PATH
+
+# 4. Writable cache directories
 ENV MPLCONFIGDIR=$HOME/.cache/matplotlib
 ENV YOLO_CONFIG_DIR=$HOME/.cache/ultralytics
-ENV STREAMLIT_CONFIG_DIR=$HOME/.streamlit
+RUN mkdir -p $MPLCONFIGDIR $YOLO_CONFIG_DIR
 
-RUN mkdir -p $MPLCONFIGDIR $YOLO_CONFIG_DIR $STREAMLIT_CONFIG_DIR
-
-# 4. Copy and install requirements
+# 5. Install Python dependencies
 COPY --chown=appuser:appuser requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-# 5. Copy app code
+# 6. Copy app code
 COPY --chown=appuser:appuser . .
 
 EXPOSE 7860
 
-# 6. Run Streamlit (user is non-root)
+# 7. Run Streamlit
 CMD ["streamlit", "run", "app.py", "--server.port=7860", "--server.address=0.0.0.0"]
