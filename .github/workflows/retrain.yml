@@ -86,7 +86,6 @@ jobs:
             python <<EOF
             import os
             from ultralytics import YOLO
-
             os.makedirs('models', exist_ok=True)
             model = YOLO('yolo11l.pt')
             model.save('models/yolo11.pt')
@@ -101,6 +100,7 @@ jobs:
           HF_DATASET_NAME: ${{ github.event.client_payload.dataset || secrets.HF_DATASET_NAME }}
           WANDB_PROJECT: ${{ secrets.WANDB_PROJECT }}
           FORCE_RETRAIN: ${{ github.event.inputs.force_retrain || 'true' }}
+          CLIENT_PAYLOAD: ${{ toJson(github.event.client_payload) }}  # Truyền cho trainer
         run: |
           echo "Starting retrain pipeline..."
           python -m utils.retrain.trainer

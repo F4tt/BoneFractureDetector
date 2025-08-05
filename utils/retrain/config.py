@@ -7,7 +7,7 @@ HF_DATASET_LOCAL_DIR = "data"
 # YOLO Training configs
 EPOCHS = 50
 IMG_SIZE = 640
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 
 # Model paths
 BASE_MODEL_PATH = "models/yolo11.pt"

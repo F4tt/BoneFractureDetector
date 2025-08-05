@@ -22,10 +22,7 @@ __pycache__/
 # Data & Datasets
 # =====================
 checkpoints
-<<<<<<< HEAD
-dataset
-=======
->>>>>>> a6cd2b5 (v2)
+
 # =====================
 # YOLO Training Logs
 # =====================
@@ -37,11 +34,7 @@ models/training_logs/*
 # YOLO Models
 # =====================
 data_unpush
-<<<<<<< HEAD
 
-=======
-X-Ray-Bone-Fracture-Detector-DTS
->>>>>>> a6cd2b5 (v2)
 # =====================
 # Cache & Temporary
 # =====================
