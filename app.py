@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image
-import os
 import numpy as np
+import os
 from utils.detection import BoneFractureDetector
 
 # =========================
@@ -20,7 +20,7 @@ MODEL_PATH = "models/best.pt"
 @st.cache_resource
 def load_model():
     if not os.path.exists(MODEL_PATH):
-        st.error("❌ Model file not found! Please upload `models/best.pt`.")
+        st.error("Model file not found! Please upload `models/best.pt`.")
         return None
     return BoneFractureDetector(MODEL_PATH)
 
@@ -28,18 +28,23 @@ def load_model():
 # Main App
 # =========================
 def main():
-    st.title("🦴 Bone Fracture Detection System")
-    st.markdown("Upload an X-ray image to detect bone fractures using **YOLO11**")
+    st.title("Bone Fracture Detection System")
+    st.markdown("Upload an X-ray image to detect bone fractures")
 
     # Load model
     detector = load_model()
     if detector is None:
         return
 
-    # Sidebar
+    # Sidebar settings
     st.sidebar.header("⚙️ Settings")
     confidence_threshold = st.sidebar.slider(
         "Confidence Threshold", 0.1, 1.0, 0.5, 0.05
+    )
+    image_size = st.sidebar.select_slider(
+        "Image Resize (NxN)",
+        options=[640, 800, 1024],
+        value=640,
     )
 
     # File uploader
@@ -50,19 +55,21 @@ def main():
     )
 
     if uploaded_file is not None:
-        # Open image
-        image = Image.open(uploaded_file).convert("RGB")
+        # Open and resize image
+        original_image = Image.open(uploaded_file).convert("RGB")
+        resized_image = original_image.resize((image_size, image_size))
 
-        # Display original & detection results side by side
+        # Display original & detection results
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Original Image")
-            st.image(image, caption="Uploaded X-ray", use_column_width=True)
+            st.image(original_image, caption=f"Original ({original_image.size[0]}x{original_image.size[1]})", use_container_width=True)
 
         with col2:
-            st.subheader("Detection Results")
-            with st.spinner("🔍 Analyzing image..."):
-                results = detector.detect_fractures(image)
+            st.subheader(f"Detection Results (Resized to {image_size}x{image_size})")
+            with st.spinner("Analyzing image..."):
+                # Run detection
+                results = detector.detect_fractures(resized_image)
 
                 # Filter detections by confidence
                 filtered_results = []
@@ -70,17 +77,16 @@ def main():
                     if result.boxes is not None:
                         mask = result.boxes.conf >= confidence_threshold
                         if mask.any():
-                            # Clone result with filtered boxes
                             filtered_result = result
                             filtered_result.boxes = result.boxes[mask]
                             filtered_results.append(filtered_result)
 
                 # Draw bounding boxes
-                result_image = detector.draw_bounding_boxes(image.copy(), filtered_results)
-                st.image(result_image, caption="Detected Fractures", use_column_width=True)
+                result_image = detector.draw_bounding_boxes(resized_image.copy(), filtered_results)
+                st.image(result_image, caption="Detected Fractures", use_container_width=True)
 
         # Detection summary
-        st.subheader("📊 Detection Summary")
+        st.subheader("Detection Summary")
         summary = detector.get_detection_summary(filtered_results)
 
         col1, col2, col3 = st.columns(3)
@@ -103,8 +109,6 @@ def main():
         else:
             st.info("No fractures detected with the current confidence threshold.")
 
-# =========================
-# Run App
-# =========================
+
 if __name__ == "__main__":
     main()
